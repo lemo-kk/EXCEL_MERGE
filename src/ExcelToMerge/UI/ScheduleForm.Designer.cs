@@ -60,9 +60,15 @@ namespace ExcelToMerge.UI
             this.groupBoxSchedules = new System.Windows.Forms.GroupBox();
             this.groupBoxDetails = new System.Windows.Forms.GroupBox();
             this.groupBoxTasks = new System.Windows.Forms.GroupBox();
+            this.groupBoxTimer = new System.Windows.Forms.GroupBox();
+            this.dateTimePickerSchedule = new System.Windows.Forms.DateTimePicker();
+            this.btnScheduleTimer = new System.Windows.Forms.Button();
+            this.labelTimerStatus = new System.Windows.Forms.Label();
+            this.btnViewLogs = new System.Windows.Forms.Button();
             this.groupBoxSchedules.SuspendLayout();
             this.groupBoxDetails.SuspendLayout();
             this.groupBoxTasks.SuspendLayout();
+            this.groupBoxTimer.SuspendLayout();
             this.SuspendLayout();
             // 
             // listViewSchedules
@@ -372,33 +378,83 @@ namespace ExcelToMerge.UI
             // 
             // groupBoxTasks
             // 
-            this.groupBoxTasks.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.groupBoxTasks.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBoxTasks.Controls.Add(this.listViewTasks);
             this.groupBoxTasks.Controls.Add(this.btnAddTask);
             this.groupBoxTasks.Controls.Add(this.btnRemoveTask);
             this.groupBoxTasks.Controls.Add(this.btnMoveUp);
             this.groupBoxTasks.Controls.Add(this.btnMoveDown);
-            this.groupBoxTasks.Controls.Add(this.btnExecute);
-            this.groupBoxTasks.Location = new System.Drawing.Point(12, 360);
+            this.groupBoxTasks.Location = new System.Drawing.Point(12, 312);
             this.groupBoxTasks.Name = "groupBoxTasks";
-            this.groupBoxTasks.Size = new System.Drawing.Size(996, 176);
-            this.groupBoxTasks.TabIndex = 2;
+            this.groupBoxTasks.Size = new System.Drawing.Size(915, 200);
+            this.groupBoxTasks.TabIndex = 11;
             this.groupBoxTasks.TabStop = false;
-            this.groupBoxTasks.Text = "转换任务列表";
+            this.groupBoxTasks.Text = "转换任务";
+            // 
+            // groupBoxTimer
+            // 
+            this.groupBoxTimer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBoxTimer.Controls.Add(this.dateTimePickerSchedule);
+            this.groupBoxTimer.Controls.Add(this.btnScheduleTimer);
+            this.groupBoxTimer.Controls.Add(this.labelTimerStatus);
+            this.groupBoxTimer.Controls.Add(this.btnViewLogs);
+            this.groupBoxTimer.Location = new System.Drawing.Point(12, 518);
+            this.groupBoxTimer.Name = "groupBoxTimer";
+            this.groupBoxTimer.Size = new System.Drawing.Size(915, 60);
+            this.groupBoxTimer.TabIndex = 12;
+            this.groupBoxTimer.TabStop = false;
+            this.groupBoxTimer.Text = "定时执行";
+            // 
+            // dateTimePickerSchedule
+            // 
+            this.dateTimePickerSchedule.CustomFormat = "yyyy-MM-dd HH:mm:ss";
+            this.dateTimePickerSchedule.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dateTimePickerSchedule.Location = new System.Drawing.Point(6, 24);
+            this.dateTimePickerSchedule.Name = "dateTimePickerSchedule";
+            this.dateTimePickerSchedule.Size = new System.Drawing.Size(200, 21);
+            this.dateTimePickerSchedule.TabIndex = 0;
+            // 
+            // btnScheduleTimer
+            // 
+            this.btnScheduleTimer.Location = new System.Drawing.Point(212, 22);
+            this.btnScheduleTimer.Name = "btnScheduleTimer";
+            this.btnScheduleTimer.Size = new System.Drawing.Size(100, 23);
+            this.btnScheduleTimer.TabIndex = 1;
+            this.btnScheduleTimer.Text = "定时执行";
+            this.btnScheduleTimer.UseVisualStyleBackColor = true;
+            // 
+            // labelTimerStatus
+            // 
+            this.labelTimerStatus.AutoSize = true;
+            this.labelTimerStatus.Location = new System.Drawing.Point(318, 27);
+            this.labelTimerStatus.Name = "labelTimerStatus";
+            this.labelTimerStatus.Size = new System.Drawing.Size(89, 12);
+            this.labelTimerStatus.TabIndex = 2;
+            this.labelTimerStatus.Text = "未设置定时执行";
+            // 
+            // btnViewLogs
+            // 
+            this.btnViewLogs.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnViewLogs.Location = new System.Drawing.Point(809, 22);
+            this.btnViewLogs.Name = "btnViewLogs";
+            this.btnViewLogs.Size = new System.Drawing.Size(100, 23);
+            this.btnViewLogs.TabIndex = 3;
+            this.btnViewLogs.Text = "查看执行日志";
+            this.btnViewLogs.UseVisualStyleBackColor = true;
             // 
             // ScheduleForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1020, 520);
+            this.ClientSize = new System.Drawing.Size(939, 618);
+            this.Controls.Add(this.groupBoxTimer);
             this.Controls.Add(this.groupBoxTasks);
             this.Controls.Add(this.groupBoxDetails);
             this.Controls.Add(this.groupBoxSchedules);
-            this.Controls.Add(this.labelStatus);
             this.Controls.Add(this.progressBarExecution);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Controls.Add(this.labelStatus);
             this.Name = "ScheduleForm";
             this.Text = "调度";
             this.Load += new System.EventHandler(this.ScheduleForm_Load);
@@ -406,6 +462,8 @@ namespace ExcelToMerge.UI
             this.groupBoxDetails.ResumeLayout(false);
             this.groupBoxDetails.PerformLayout();
             this.groupBoxTasks.ResumeLayout(false);
+            this.groupBoxTimer.ResumeLayout(false);
+            this.groupBoxTimer.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -445,5 +503,10 @@ namespace ExcelToMerge.UI
         private System.Windows.Forms.GroupBox groupBoxSchedules;
         private System.Windows.Forms.GroupBox groupBoxDetails;
         private System.Windows.Forms.GroupBox groupBoxTasks;
+        private System.Windows.Forms.GroupBox groupBoxTimer;
+        private System.Windows.Forms.DateTimePicker dateTimePickerSchedule;
+        private System.Windows.Forms.Button btnScheduleTimer;
+        private System.Windows.Forms.Label labelTimerStatus;
+        private System.Windows.Forms.Button btnViewLogs;
     }
 } 
