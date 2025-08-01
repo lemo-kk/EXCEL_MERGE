@@ -54,23 +54,27 @@ namespace ExcelToMerge.Utils
         /// </summary>
         private static void InitializeDatabase()
         {
-            // 如果数据库文件不存在，则创建数据库和表结构
-            string dbPath = _connectionString.Split('=')[1].Split(';')[0];
-            bool isNewDb = !File.Exists(dbPath);
+            // 检查数据库文件是否存在
+            string dbPath = ConfigurationManager.AppSettings["DatabasePath"];
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                dbPath = "ExcelToMerge.db";
+            }
             
+            string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
+            bool isNewDb = !File.Exists(fullPath);
+            
+            // 创建数据库目录
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            
+            // 如果是新数据库，创建表结构
             if (isNewDb)
             {
-                // 创建数据库文件
-                SQLiteConnection.CreateFile(dbPath);
-                
-                // 创建表结构
-                using (var connection = new SQLiteConnection(_connectionString))
+                using (var connection = GetConnection())
                 {
-                    connection.Open();
-                    
                     // 导入历史表
-                    ExecuteNonQuery(@"
-                        CREATE TABLE ImportHistory (
+                    string importHistorySql = @"
+                        CREATE TABLE IF NOT EXISTS ImportHistory (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
                             FileName TEXT NOT NULL,
                             FilePath TEXT NOT NULL,
@@ -82,54 +86,131 @@ namespace ExcelToMerge.Utils
                             StartTime TEXT NOT NULL,
                             EndTime TEXT,
                             ErrorMessage TEXT
-                        );");
+                        );";
                     
                     // 转换任务表
-                    ExecuteNonQuery(@"
-                        CREATE TABLE ConvertTask (
+                    string convertTaskSql = @"
+                        CREATE TABLE IF NOT EXISTS ConvertTask (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
                             Name TEXT NOT NULL,
                             Description TEXT,
                             SqlScript TEXT NOT NULL,
                             OutputFormat TEXT NOT NULL,
-                            IsActive INTEGER NOT NULL DEFAULT 1,
+                            IsActive INTEGER NOT NULL,
                             CreatedTime TEXT NOT NULL
-                        );");
+                        );";
                     
-                    // 调度配置表
-                    ExecuteNonQuery(@"
-                        CREATE TABLE ScheduleConfig (
+                    // 调度任务表
+                    string scheduleConfigSql = @"
+                        CREATE TABLE IF NOT EXISTS ScheduleConfig (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
                             Name TEXT NOT NULL,
                             Description TEXT,
                             OutputPath TEXT NOT NULL,
-                            IsActive INTEGER NOT NULL DEFAULT 1,
-                            CreatedTime TEXT NOT NULL
-                        );");
+                            IsActive INTEGER NOT NULL,
+                            CreatedTime TEXT NOT NULL,
+                            CronExpression TEXT,
+                            BusinessStartDate TEXT,
+                            BusinessEndDate TEXT,
+                            LastExecutionDate TEXT
+                        );";
                     
                     // 调度明细表
-                    ExecuteNonQuery(@"
-                        CREATE TABLE ScheduleDetail (
+                    string scheduleDetailSql = @"
+                        CREATE TABLE IF NOT EXISTS ScheduleDetail (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
                             ScheduleId INTEGER NOT NULL,
                             TaskId INTEGER NOT NULL,
                             Sequence INTEGER NOT NULL,
-                            IsActive INTEGER NOT NULL DEFAULT 1,
-                            FOREIGN KEY (ScheduleId) REFERENCES ScheduleConfig(Id),
-                            FOREIGN KEY (TaskId) REFERENCES ConvertTask(Id)
-                        );");
+                            IsActive INTEGER NOT NULL,
+                            FOREIGN KEY (ScheduleId) REFERENCES ScheduleConfig (Id),
+                            FOREIGN KEY (TaskId) REFERENCES ConvertTask (Id)
+                        );";
                     
                     // 执行日志表
-                    ExecuteNonQuery(@"
-                        CREATE TABLE ExecutionLog (
+                    string executionLogSql = @"
+                        CREATE TABLE IF NOT EXISTS ExecutionLog (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
                             ScheduleId INTEGER NOT NULL,
                             StartTime TEXT NOT NULL,
                             EndTime TEXT,
                             Status TEXT NOT NULL,
                             ErrorMessage TEXT,
-                            FOREIGN KEY (ScheduleId) REFERENCES ScheduleConfig(Id)
-                        );");
+                            FOREIGN KEY (ScheduleId) REFERENCES ScheduleConfig (Id)
+                        );";
+                    
+                    // SQL模板表
+                    string sqlTemplateSql = @"
+                        CREATE TABLE IF NOT EXISTS SqlTemplate (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Name TEXT NOT NULL,
+                            Category TEXT,
+                            Content TEXT NOT NULL,
+                            IsSystem INTEGER NOT NULL,
+                            CreatedTime TEXT NOT NULL
+                        );";
+                    
+                    // 执行建表语句
+                    using (var command = GetConnection().CreateCommand())
+                    {
+                        command.CommandText = importHistorySql;
+                        command.ExecuteNonQuery();
+                        
+                        command.CommandText = convertTaskSql;
+                        command.ExecuteNonQuery();
+                        
+                        command.CommandText = scheduleConfigSql;
+                        command.ExecuteNonQuery();
+                        
+                        command.CommandText = scheduleDetailSql;
+                        command.ExecuteNonQuery();
+                        
+                        command.CommandText = executionLogSql;
+                        command.ExecuteNonQuery();
+                        
+                        command.CommandText = sqlTemplateSql;
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            else
+            {
+                // 检查是否需要升级表结构
+                using (var connection = GetConnection())
+                {
+                    // 检查ScheduleConfig表是否有新增字段
+                    bool hasNewFields = false;
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "PRAGMA table_info(ScheduleConfig);";
+                        using (var reader = command.ExecuteReader())
+                        {
+                            var columnNames = new List<string>();
+                            while (reader.Read())
+                            {
+                                columnNames.Add(reader["name"].ToString());
+                            }
+                            
+                            hasNewFields = columnNames.Contains("CronExpression") && 
+                                          columnNames.Contains("BusinessStartDate") && 
+                                          columnNames.Contains("BusinessEndDate") && 
+                                          columnNames.Contains("LastExecutionDate");
+                        }
+                    }
+                    
+                    // 如果没有新增字段，添加它们
+                    if (!hasNewFields)
+                    {
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = @"
+                                ALTER TABLE ScheduleConfig ADD COLUMN CronExpression TEXT;
+                                ALTER TABLE ScheduleConfig ADD COLUMN BusinessStartDate TEXT;
+                                ALTER TABLE ScheduleConfig ADD COLUMN BusinessEndDate TEXT;
+                                ALTER TABLE ScheduleConfig ADD COLUMN LastExecutionDate TEXT;";
+                            command.ExecuteNonQuery();
+                        }
+                    }
                 }
             }
         }

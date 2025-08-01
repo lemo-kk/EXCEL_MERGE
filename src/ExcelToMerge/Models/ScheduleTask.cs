@@ -49,6 +49,26 @@ namespace ExcelToMerge.Models
         public DateTime CreatedTime { get; set; }
         
         /// <summary>
+        /// Cron表达式（定时执行规则）
+        /// </summary>
+        public string CronExpression { get; set; }
+        
+        /// <summary>
+        /// 业务开始日期
+        /// </summary>
+        public DateTime? BusinessStartDate { get; set; }
+        
+        /// <summary>
+        /// 业务结束日期
+        /// </summary>
+        public DateTime? BusinessEndDate { get; set; }
+        
+        /// <summary>
+        /// 上次执行的业务日期
+        /// </summary>
+        public DateTime? LastExecutionDate { get; set; }
+        
+        /// <summary>
         /// 任务项数量（用于列表显示）
         /// </summary>
         public int ItemCount { get; set; }

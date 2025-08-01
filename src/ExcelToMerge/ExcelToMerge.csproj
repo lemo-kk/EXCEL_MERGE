@@ -32,6 +32,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <NoWin32Manifest>true</NoWin32Manifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>5412672_300 %281%29.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -66,11 +72,23 @@
     <Compile Include="Services\ImportService.cs" />
     <Compile Include="Services\ScheduleService.cs" />
     <Compile Include="TestProgram.cs" />
+    <Compile Include="UI\BatchExecutionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\BatchExecutionForm.Designer.cs">
+      <DependentUpon>BatchExecutionForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ConvertForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="UI\ConvertForm.Designer.cs">
       <DependentUpon>ConvertForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\ExecutionLogForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ExecutionLogForm.Designer.cs">
+      <DependentUpon>ExecutionLogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\ImportForm.cs">
       <SubType>Form</SubType>
@@ -84,17 +102,23 @@
     <Compile Include="UI\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\ScheduleEditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ScheduleEditForm.Designer.cs">
+      <DependentUpon>ScheduleEditForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ScheduleForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="UI\ScheduleForm.Designer.cs">
       <DependentUpon>ScheduleForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\TaskSelectionForm.cs">
+    <Compile Include="UI\ScheduleTasksEditForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\TaskSelectionForm.Designer.cs">
-      <DependentUpon>TaskSelectionForm.cs</DependentUpon>
+    <Compile Include="UI\ScheduleTasksEditForm.Designer.cs">
+      <DependentUpon>ScheduleTasksEditForm.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\SqlTemplateForm.cs">
       <SubType>Form</SubType>
@@ -102,11 +126,15 @@
     <Compile Include="UI\SqlTemplateForm.Designer.cs">
       <DependentUpon>SqlTemplateForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\BatchExecutionForm.cs">
+    <Compile Include="UI\TaskSelectionForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\BatchExecutionForm.Designer.cs">
-      <DependentUpon>BatchExecutionForm.cs</DependentUpon>
+    <Compile Include="UI\TaskSelectionForm.Designer.cs">
+      <DependentUpon>TaskSelectionForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Utils\AppTheme.cs" />
+    <Compile Include="Utils\CustomControls.cs">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="Utils\ExcelHelper.cs" />
     <Compile Include="Utils\ProgressReporter.cs" />
@@ -125,8 +153,14 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\BatchExecutionForm.resx">
+      <DependentUpon>BatchExecutionForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ConvertForm.resx">
       <DependentUpon>ConvertForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ExecutionLogForm.resx">
+      <DependentUpon>ExecutionLogForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ImportForm.resx">
       <DependentUpon>ImportForm.cs</DependentUpon>
@@ -134,14 +168,17 @@
     <EmbeddedResource Include="UI\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ScheduleEditForm.resx">
+      <DependentUpon>ScheduleEditForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ScheduleForm.resx">
       <DependentUpon>ScheduleForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ScheduleTasksEditForm.resx">
+      <DependentUpon>ScheduleTasksEditForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\SqlTemplateForm.resx">
       <DependentUpon>SqlTemplateForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UI\BatchExecutionForm.resx">
-      <DependentUpon>BatchExecutionForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\TaskSelectionForm.resx">
       <DependentUpon>TaskSelectionForm.cs</DependentUpon>
@@ -163,6 +200,12 @@
     <PackageReference Include="System.Data.SQLite.Core">
       <Version>1.0.113.7</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="5412672_300 %281%29.ico" />
+    <Content Include="d8f9d72a6059252dd42aa28a9ac3143b5bb5c8ea13be.ico" />
+    <Content Include="efeaca47bd41555b943b6f0c4e7ea4c0aaaede14 %281%29.ico" />
+    <Content Include="efeaca47bd41555b943b6f0c4e7ea4c0aaaede14.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -24,6 +24,7 @@ namespace ExcelToMerge.UI
         private List<string> _sheetNames;
         private List<string> _selectedFiles;
         private IProgress<ProgressInfo> _progress;
+        private CustomProgressBar _customProgressBar; // 添加自定义进度条控件
         
         /// <summary>
         /// 构造函数
@@ -34,6 +35,27 @@ namespace ExcelToMerge.UI
             _importService = new ImportService();
             _sheetNames = new List<string>();
             _selectedFiles = new List<string>();
+            
+            // 创建自定义进度条控件
+            _customProgressBar = new CustomProgressBar
+            {
+                Location = metroProgressBar.Location,
+                Size = metroProgressBar.Size,
+                Anchor = metroProgressBar.Anchor,
+                ChannelHeight = 10,
+                CornerRadius = 5,
+                ProgressColor = Color.FromArgb(0, 122, 204),
+                ChannelColor = Color.FromArgb(230, 230, 230),
+                TextColor = Color.Black,
+                ShowPercentage = false,
+                Visible = false
+            };
+            
+            // 将自定义进度条添加到窗体
+            this.Controls.Add(_customProgressBar);
+            
+            // 将自定义进度条放在原来进度条的位置
+            _customProgressBar.BringToFront();
         }
         
         /// <summary>
@@ -50,6 +72,7 @@ namespace ExcelToMerge.UI
             
             // 隐藏进度条
             metroProgressBar.Visible = false;
+            _customProgressBar.Visible = false;
             lblProgress.Visible = false;
         }
         
@@ -233,6 +256,7 @@ namespace ExcelToMerge.UI
                 
                 // 显示进度条
                 metroProgressBar.Visible = true;
+                _customProgressBar.Visible = true;
                 lblProgress.Visible = true;
                 metroProgressBar.Value = 0;
                 
@@ -288,7 +312,7 @@ namespace ExcelToMerge.UI
                                 if (tableAction == TableExistsAction.CancelAll)
                                 {
                                     EnableControls();
-                                    metroProgressBar.Visible = false;
+                                    _customProgressBar.Visible = false;
                                     lblProgress.Visible = false;
                                     MessageBox.Show("已取消所有文件的导入", "已取消", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                     break;
@@ -320,7 +344,7 @@ namespace ExcelToMerge.UI
                                     if (tableAction == TableExistsAction.CancelAll)
                                     {
                                         EnableControls();
-                                        metroProgressBar.Visible = false;
+                                        _customProgressBar.Visible = false;
                                         lblProgress.Visible = false;
                                         MessageBox.Show("已取消所有文件的导入", "已取消", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                         break;
@@ -354,7 +378,7 @@ namespace ExcelToMerge.UI
                                         if (action == TableExistsAction.CancelAll)
                                         {
                                             EnableControls();
-                                            metroProgressBar.Visible = false;
+                                            _customProgressBar.Visible = false;
                                             lblProgress.Visible = false;
                                             MessageBox.Show("已取消所有文件的导入", "已取消", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                             break;
@@ -394,7 +418,7 @@ namespace ExcelToMerge.UI
                 EnableControls();
                 
                 // 隐藏进度条
-                metroProgressBar.Visible = false;
+                _customProgressBar.Visible = false;
                 lblProgress.Visible = false;
                 
                             if (result.Status == ImportStatus.Success)
@@ -413,7 +437,7 @@ namespace ExcelToMerge.UI
                     {
                         // 其他异常，显示错误信息
                         EnableControls();
-                        metroProgressBar.Visible = false;
+                        _customProgressBar.Visible = false;
                         lblProgress.Visible = false;
                         MessageBox.Show($"导入失败: {ex.Message}", 
                             "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -427,7 +451,7 @@ namespace ExcelToMerge.UI
                 EnableControls();
                 
                 // 隐藏进度条
-                metroProgressBar.Visible = false;
+                _customProgressBar.Visible = false;
                 lblProgress.Visible = false;
                 
                 MessageBox.Show($"导入失败: {ex.Message}", 
@@ -447,8 +471,12 @@ namespace ExcelToMerge.UI
                 return;
             }
 
-            // 更新进度条
+            // 更新原始进度条（保留但隐藏）
             metroProgressBar.Value = (int)info.Percentage;
+            
+            // 更新自定义进度条
+            _customProgressBar.Value = (int)info.Percentage;
+            _customProgressBar.CustomText = info.Status;
             
             // 更新进度标签
             lblProgress.Text = $"{info.Status} ({info.ProcessedItems}/{info.TotalItems})";
@@ -461,9 +489,10 @@ namespace ExcelToMerge.UI
             }
             
             // 确保进度条和标签可见
-            if (!metroProgressBar.Visible)
+            if (!_customProgressBar.Visible)
             {
-                metroProgressBar.Visible = true;
+                metroProgressBar.Visible = false; // 隐藏原始进度条
+                _customProgressBar.Visible = true; // 显示自定义进度条
                 lblProgress.Visible = true;
             }
             

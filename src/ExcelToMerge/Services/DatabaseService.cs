@@ -5,6 +5,7 @@ using System.IO;
 using System.Configuration;
 using ExcelToMerge.Models;
 using ExcelToMerge.Utils;
+using System.Linq;
 
 namespace ExcelToMerge.Services
 {
@@ -291,20 +292,14 @@ namespace ExcelToMerge.Services
             if (task == null)
                 throw new ArgumentNullException(nameof(task));
             
-            if (string.IsNullOrEmpty(task.Name))
-                throw new ArgumentException("任务名称不能为空", nameof(task.Name));
-            
-            if (string.IsNullOrEmpty(task.OutputPath))
-                throw new ArgumentException("输出路径不能为空", nameof(task.OutputPath));
-            
             if (task.Id == 0)
             {
                 // 新增
                 string sql = @"
                     INSERT INTO ScheduleConfig 
-                    (Name, Description, OutputPath, IsActive, CreatedTime)
+                    (Name, Description, OutputPath, IsActive, CreatedTime, CronExpression, BusinessStartDate, BusinessEndDate, LastExecutionDate)
                     VALUES 
-                    (@Name, @Description, @OutputPath, @IsActive, @CreatedTime);
+                    (@Name, @Description, @OutputPath, @IsActive, @CreatedTime, @CronExpression, @BusinessStartDate, @BusinessEndDate, @LastExecutionDate);
                     SELECT last_insert_rowid();";
                 
                 var parameters = new
@@ -313,7 +308,11 @@ namespace ExcelToMerge.Services
                     task.Description,
                     task.OutputPath,
                     IsActive = task.IsActive ? 1 : 0,
-                    CreatedTime = task.CreatedTime
+                    CreatedTime = task.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    task.CronExpression,
+                    BusinessStartDate = task.BusinessStartDate.HasValue ? task.BusinessStartDate.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value,
+                    BusinessEndDate = task.BusinessEndDate.HasValue ? task.BusinessEndDate.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value,
+                    LastExecutionDate = task.LastExecutionDate.HasValue ? task.LastExecutionDate.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value
                 };
                 
                 return SqliteHelper.ExecuteScalar<int>(sql, parameters);
@@ -326,7 +325,11 @@ namespace ExcelToMerge.Services
                     SET Name = @Name, 
                         Description = @Description, 
                         OutputPath = @OutputPath, 
-                        IsActive = @IsActive
+                        IsActive = @IsActive,
+                        CronExpression = @CronExpression,
+                        BusinessStartDate = @BusinessStartDate,
+                        BusinessEndDate = @BusinessEndDate,
+                        LastExecutionDate = @LastExecutionDate
                     WHERE Id = @Id;";
                 
                 var parameters = new
@@ -335,7 +338,11 @@ namespace ExcelToMerge.Services
                     task.Name,
                     task.Description,
                     task.OutputPath,
-                    IsActive = task.IsActive ? 1 : 0
+                    IsActive = task.IsActive ? 1 : 0,
+                    task.CronExpression,
+                    BusinessStartDate = task.BusinessStartDate.HasValue ? task.BusinessStartDate.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value,
+                    BusinessEndDate = task.BusinessEndDate.HasValue ? task.BusinessEndDate.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value,
+                    LastExecutionDate = task.LastExecutionDate.HasValue ? task.LastExecutionDate.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value
                 };
                 
                 SqliteHelper.ExecuteNonQuery(sql, parameters);
@@ -358,16 +365,25 @@ namespace ExcelToMerge.Services
                 return null;
             
             var row = dataTable.Rows[0];
-            return new ScheduleTask
+            var task = new ScheduleTask
             {
                 Id = Convert.ToInt32(row["Id"]),
                 Name = row["Name"].ToString(),
                 Description = row["Description"] != DBNull.Value ? row["Description"].ToString() : null,
                 OutputPath = row["OutputPath"].ToString(),
-                IsActive = Convert.ToBoolean(row["IsActive"]),
+                IsActive = Convert.ToInt32(row["IsActive"]) != 0,
                 CreatedTime = Convert.ToDateTime(row["CreatedTime"]),
-                TaskItems = new List<ScheduleTaskItem>()
+                CronExpression = row["CronExpression"] != DBNull.Value ? row["CronExpression"].ToString() : null,
+                BusinessStartDate = row["BusinessStartDate"] != DBNull.Value ? Convert.ToDateTime(row["BusinessStartDate"]) : (DateTime?)null,
+                BusinessEndDate = row["BusinessEndDate"] != DBNull.Value ? Convert.ToDateTime(row["BusinessEndDate"]) : (DateTime?)null,
+                LastExecutionDate = row["LastExecutionDate"] != DBNull.Value ? Convert.ToDateTime(row["LastExecutionDate"]) : (DateTime?)null
             };
+            
+            // 获取任务项数量
+            string countSql = "SELECT COUNT(*) FROM ScheduleDetail WHERE ScheduleId = @ScheduleId;";
+            task.ItemCount = SqliteHelper.ExecuteScalar<int>(countSql, new { ScheduleId = id });
+            
+            return task;
         }
         
         /// <summary>
@@ -377,17 +393,9 @@ namespace ExcelToMerge.Services
         /// <returns>调度任务列表</returns>
         public List<ScheduleTask> GetScheduleTaskList(bool activeOnly = false)
         {
-            string sql = @"
-                SELECT s.*, COUNT(d.Id) AS ItemCount
-                FROM ScheduleConfig s
-                LEFT JOIN ScheduleDetail d ON s.Id = d.ScheduleId";
-            
-            if (activeOnly)
-            {
-                sql += " WHERE s.IsActive = 1";
-            }
-            
-            sql += " GROUP BY s.Id ORDER BY s.CreatedTime DESC;";
+            string sql = activeOnly 
+                ? "SELECT * FROM ScheduleConfig WHERE IsActive = 1 ORDER BY Id DESC;" 
+                : "SELECT * FROM ScheduleConfig ORDER BY Id DESC;";
             
             var dataTable = SqliteHelper.ExecuteQuery(sql);
             var result = new List<ScheduleTask>();
@@ -400,11 +408,17 @@ namespace ExcelToMerge.Services
                     Name = row["Name"].ToString(),
                     Description = row["Description"] != DBNull.Value ? row["Description"].ToString() : null,
                     OutputPath = row["OutputPath"].ToString(),
-                    IsActive = Convert.ToBoolean(row["IsActive"]),
+                    IsActive = Convert.ToInt32(row["IsActive"]) != 0,
                     CreatedTime = Convert.ToDateTime(row["CreatedTime"]),
-                    ItemCount = Convert.ToInt32(row["ItemCount"]),
-                    TaskItems = new List<ScheduleTaskItem>()
+                    CronExpression = row["CronExpression"] != DBNull.Value ? row["CronExpression"].ToString() : null,
+                    BusinessStartDate = row["BusinessStartDate"] != DBNull.Value ? Convert.ToDateTime(row["BusinessStartDate"]) : (DateTime?)null,
+                    BusinessEndDate = row["BusinessEndDate"] != DBNull.Value ? Convert.ToDateTime(row["BusinessEndDate"]) : (DateTime?)null,
+                    LastExecutionDate = row["LastExecutionDate"] != DBNull.Value ? Convert.ToDateTime(row["LastExecutionDate"]) : (DateTime?)null
                 };
+                
+                // 获取任务项数量
+                string countSql = "SELECT COUNT(*) FROM ScheduleDetail WHERE ScheduleId = @ScheduleId;";
+                task.ItemCount = SqliteHelper.ExecuteScalar<int>(countSql, new { ScheduleId = task.Id });
                 
                 result.Add(task);
             }
@@ -605,6 +619,40 @@ namespace ExcelToMerge.Services
                 SqliteHelper.ExecuteNonQuery(sql, parameters);
                 return log.Id;
             }
+        }
+
+        /// <summary>
+        /// 获取执行日志列表
+        /// </summary>
+        /// <param name="scheduleId">调度任务ID</param>
+        /// <returns>执行日志列表</returns>
+        public List<ExecutionLog> GetExecutionLogs(int scheduleId)
+        {
+            string sql = "SELECT * FROM ExecutionLog WHERE ScheduleId = @ScheduleId ORDER BY StartTime DESC;";
+            
+            var dataTable = SqliteHelper.ExecuteQuery(sql, new { ScheduleId = scheduleId });
+            var result = new List<ExecutionLog>();
+            
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var log = new ExecutionLog
+                {
+                    Id = Convert.ToInt32(row["Id"]),
+                    ScheduleId = Convert.ToInt32(row["ScheduleId"]),
+                    StartTime = Convert.ToDateTime(row["StartTime"]),
+                    Status = row["Status"].ToString(),
+                    ErrorMessage = row["ErrorMessage"] != DBNull.Value ? row["ErrorMessage"].ToString() : null
+                };
+                
+                if (row["EndTime"] != DBNull.Value)
+                {
+                    log.EndTime = Convert.ToDateTime(row["EndTime"]);
+                }
+                
+                result.Add(log);
+            }
+            
+            return result;
         }
         
         #endregion

@@ -283,6 +283,16 @@ namespace ExcelToMerge.Services
                 return result;
             }
         }
+
+        /// <summary>
+        /// 获取执行日志列表
+        /// </summary>
+        /// <param name="scheduleId">调度任务ID</param>
+        /// <returns>执行日志列表</returns>
+        public List<ExecutionLog> GetExecutionLogs(int scheduleId)
+        {
+            return _databaseService.GetExecutionLogs(scheduleId);
+        }
     }
     
     /// <summary>
